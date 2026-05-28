@@ -208,19 +208,23 @@
 
   // ── audio ──
   var ac=null;
-  function ctx(){ if(!ac) ac=new (window.AudioContext||window.webkitAudioContext)();
-    if(ac.state==="suspended") ac.resume(); return ac; }
-  function unlockAudio(){
+  function ctx(){ if(!ac) ac=new (window.AudioContext||window.webkitAudioContext)(); return ac; }
+  function withCtx(fn){
+    var a=ctx();
+    if(a.state==="running"){ fn(a); return; }
+    a.resume().then(function(){ fn(a); });
+  }
+  function unlockAudio(cb){
     var a=ctx();
     var buf=a.createBuffer(1,1,22050);
     var src=a.createBufferSource();
     src.buffer=buf; src.connect(a.destination); src.start(0);
-    a.resume();
+    a.resume().then(function(){ if(cb) cb(); });
   }
   function noise(a,dur){ var n=a.sampleRate*dur,buf=a.createBuffer(1,n,a.sampleRate),d=buf.getChannelData(0);
     for(var i=0;i<n;i++) d[i]=Math.random()*2-1; var s=a.createBufferSource(); s.buffer=buf; return s; }
-  function synth(id){
-    var a=ctx(),t=a.currentTime+(isIOS?.05:0),out=a.destination;
+  function synthNow(id,a){
+    var t=a.currentTime+0.01,out=a.destination;
     if(id==="kick"){var o=a.createOscillator(),g=a.createGain();
       o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(46,t+.12);
       g.gain.setValueAtTime(1,t);g.gain.exponentialRampToValueAtTime(.001,t+.42);
@@ -243,6 +247,7 @@
       hp.type="highpass";hp.frequency.value=5000;g.gain.setValueAtTime(.5,t);
       g.gain.exponentialRampToValueAtTime(.001,t+1.1);s.connect(hp).connect(g).connect(out);s.start(t);s.stop(t+1.2);}
   }
+  function synth(id){ withCtx(function(a){ synthNow(id,a); }); }
   var timers={};
   function flash(id){var el=els[id]; if(!el) return;
     el.classList.add("on"); el.style.borderColor=padColor(id);
@@ -420,7 +425,6 @@
   }
 
   function hit(id,fromUser){
-    if(isIOS&&ac&&ac.state!=="running") ac.resume();
     synth(id);flash(id);
     if(fromUser&&phase==="play"){
       if(seq[ui]===id){ ui++;
@@ -487,8 +491,9 @@
     if(isIOS){
       els.audioModal.classList.add("show");
       els.audioUnlockBtn.addEventListener("click",function(){
-        unlockAudio();
-        els.audioModal.classList.remove("show");
+        unlockAudio(function(){
+          els.audioModal.classList.remove("show");
+        });
       });
     }
     window.addEventListener("keydown",function(e){ if(e.repeat) return;
