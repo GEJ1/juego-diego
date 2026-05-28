@@ -76,7 +76,7 @@
   .cta .links{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
   .lnk{border-radius:12px;padding:14px 22px;font-weight:700;font-size:15px;text-decoration:none;display:inline-block;}
   .lnk.solid{background:#25D366;color:#0a2912;}
-  .lnk.ghost{background:transparent;color:var(--ink);border:1px solid rgba(255,255,255,.22);}
+  .lnk.ghost{background:rgba(255,255,255,.08);color:var(--ink);border:1px solid rgba(255,255,255,.22);}
   .foot{text-align:center;color:#6d6256;font-size:12px;margin-top:28px;}
 
   /* ── share area ── */
@@ -102,6 +102,8 @@
     .pad.big{width:108px;height:96px;}
     .row{gap:8px;}
     .bar{justify-content:center;}.score{text-align:center;width:100%;}
+    .cta .links{flex-direction:column;align-items:stretch;}
+    .lnk{text-align:center;}
   }
 </style>
 </head>
