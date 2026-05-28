@@ -208,27 +208,23 @@
 
   // ── audio ──
   var ac=null;
-  function ctx(){ if(!ac) ac=new (window.AudioContext||window.webkitAudioContext)(); return ac; }
-  function resumeCtx(a, cb){
-    var p=a.resume();
-    if(p && p.then){ p.then(cb); } else { setTimeout(cb, 100); }
-  }
-  function withCtx(fn){
-    var a=ctx();
-    if(a.state==="running"){ fn(a); return; }
-    resumeCtx(a, function(){ fn(a); });
+  function ctx(){
+    if(!ac) ac=new (window.AudioContext||window.webkitAudioContext)();
+    if(ac.state!=="running") ac.resume();
+    return ac;
   }
   function unlockAudio(cb){
     var a=ctx();
     var buf=a.createBuffer(1,1,22050);
     var src=a.createBufferSource();
     src.buffer=buf; src.connect(a.destination); src.start(0);
-    resumeCtx(a, function(){ if(cb) cb(); });
+    var p=a.resume();
+    if(p && p.then){ p.then(function(){ if(cb) cb(); }); } else { setTimeout(function(){ if(cb) cb(); },100); }
   }
   function noise(a,dur){ var n=a.sampleRate*dur,buf=a.createBuffer(1,n,a.sampleRate),d=buf.getChannelData(0);
     for(var i=0;i<n;i++) d[i]=Math.random()*2-1; var s=a.createBufferSource(); s.buffer=buf; return s; }
   function synthNow(id,a){
-    var t=a.currentTime+0.01,out=a.destination;
+    var t=a.currentTime+(isIOS?0.15:0.01),out=a.destination;
     if(id==="kick"){var o=a.createOscillator(),g=a.createGain();
       o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(46,t+.12);
       g.gain.setValueAtTime(1,t);g.gain.exponentialRampToValueAtTime(.001,t+.42);
@@ -251,7 +247,7 @@
       hp.type="highpass";hp.frequency.value=5000;g.gain.setValueAtTime(.5,t);
       g.gain.exponentialRampToValueAtTime(.001,t+1.1);s.connect(hp).connect(g).connect(out);s.start(t);s.stop(t+1.2);}
   }
-  function synth(id){ withCtx(function(a){ synthNow(id,a); }); }
+  function synth(id){ synthNow(id,ctx()); }
   var timers={};
   function flash(id){var el=els[id]; if(!el) return;
     el.classList.add("on"); el.style.borderColor=padColor(id);
