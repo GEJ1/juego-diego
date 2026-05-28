@@ -209,17 +209,21 @@
   // ── audio ──
   var ac=null;
   function ctx(){ if(!ac) ac=new (window.AudioContext||window.webkitAudioContext)(); return ac; }
+  function resumeCtx(a, cb){
+    var p=a.resume();
+    if(p && p.then){ p.then(cb); } else { setTimeout(cb, 100); }
+  }
   function withCtx(fn){
     var a=ctx();
     if(a.state==="running"){ fn(a); return; }
-    a.resume().then(function(){ fn(a); });
+    resumeCtx(a, function(){ fn(a); });
   }
   function unlockAudio(cb){
     var a=ctx();
     var buf=a.createBuffer(1,1,22050);
     var src=a.createBufferSource();
     src.buffer=buf; src.connect(a.destination); src.start(0);
-    a.resume().then(function(){ if(cb) cb(); });
+    resumeCtx(a, function(){ if(cb) cb(); });
   }
   function noise(a,dur){ var n=a.sampleRate*dur,buf=a.createBuffer(1,n,a.sampleRate),d=buf.getChannelData(0);
     for(var i=0;i<n;i++) d[i]=Math.random()*2-1; var s=a.createBufferSource(); s.buffer=buf; return s; }
