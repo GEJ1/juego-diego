@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>¿Tenés ritmo? — Diego Juantorena</title>
+<meta name="description" content="Tocá la batería online, jugá a seguir el ritmo y aprendé de verdad con Diego Juantorena. Clases para todos los niveles." />
+<meta property="og:title" content="¿Tenés ritmo? — Diego Juantorena" />
+<meta property="og:description" content="Tocá, jugá y sentí el groove. Después lo hacemos de verdad. 🥁" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --accent:#FF7A18; --hot:#FF2E63; --ink:#f5efe6; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; }
+  body{
+    font-family:'Archivo',system-ui,sans-serif; color:var(--ink);
+    background:radial-gradient(120% 80% at 50% -10%,#2a1505 0%,#140d08 38%,#0a0706 100%);
+    min-height:100vh; overflow-x:hidden; position:relative; touch-action:manipulation;
+  }
+  .grain{position:fixed;inset:0;pointer-events:none;opacity:.05;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+  main{max-width:880px;margin:0 auto;padding:clamp(20px,4vw,48px) 16px 64px;position:relative;z-index:1;}
+  .eyebrow{letter-spacing:.34em;text-transform:uppercase;font-size:12px;color:var(--accent);font-weight:700;margin:0;text-align:center;}
+  h1{font-family:'Anton',sans-serif;font-weight:400;font-size:clamp(44px,11vw,88px);line-height:.9;margin:12px 0 0;text-align:center;letter-spacing:-.01em;animation:rise .6s ease both;}
+  h1 .b{color:var(--accent);}
+  .sub{color:#cdbfae;max-width:440px;margin:16px auto 0;font-size:17px;line-height:1.5;text-align:center;}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  .bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:32px 0 14px;flex-wrap:wrap;}
+  .btns{display:flex;gap:10px;flex-wrap:wrap;}
+  button{font-family:'Archivo',sans-serif;cursor:pointer;border:none;}
+  .b-primary{background:var(--accent);color:#0a0706;border-radius:12px;padding:12px 16px;font-weight:700;font-size:14px;}
+  .b-primary.live{background:var(--hot);}
+  .b-ghost{background:#2b2018;color:var(--ink);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:12px 16px;font-weight:700;font-size:14px;}
+  .score{text-align:right;}
+  .round{font-family:'Anton',sans-serif;font-size:22px;color:var(--accent);margin-bottom:2px;}
+  .round.over{color:var(--hot);}
+  .score-line{display:flex;justify-content:flex-end;align-items:baseline;gap:6px;line-height:1.6;}
+  .slbl{font-size:10px;color:#8a7d6e;letter-spacing:.1em;text-transform:uppercase;}
+  .sval{font-family:'Anton',sans-serif;font-size:22px;color:var(--ink);}
+  .sval.accent{color:var(--accent);}
+  .sval.record{color:#FFD166;animation:pop .35s ease;}
+  @keyframes pop{0%{transform:scale(1.5)}100%{transform:scale(1)}}
+  /* record banner */
+  #recBanner{position:fixed;top:0;left:0;right:0;z-index:99;pointer-events:none;
+    font-family:'Anton',sans-serif;font-size:clamp(18px,5vw,28px);letter-spacing:.06em;
+    text-align:center;padding:14px;background:linear-gradient(90deg,var(--hot),var(--accent));
+    color:#0a0706;opacity:0;transform:translateY(-100%);transition:opacity .2s,transform .3s;}
+  #recBanner.show{opacity:1;transform:translateY(0);}
+  .status{text-align:center;color:#b6a895;font-size:14px;margin:0 0 20px;min-height:20px;}
+  .tempo{display:none;align-items:center;justify-content:center;gap:12px;margin-bottom:18px;}
+  .tempo input{accent-color:var(--accent);width:min(200px,55vw);}
+  .tempo .bpm{font-family:'Anton',sans-serif;color:var(--accent);width:64px;}
+
+  .kit{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:24px;
+    padding:clamp(14px,3vw,28px);backdrop-filter:blur(4px);box-shadow:0 30px 80px rgba(0,0,0,.5);}
+  .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:10px;}
+  .pad{position:relative;border:2px solid rgba(255,255,255,.12);
+    background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(0,0,0,.25));
+    color:#cdbfae;border-radius:50% 50% 46% 46% / 60% 60% 40% 40%;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    font-weight:700;font-size:14px;user-select:none;
+    transition:transform .07s,box-shadow .12s,background .12s,border-color .12s;
+    width:108px;height:96px;flex:0 0 auto;}
+  .pad.big{width:130px;height:110px;}
+  .pad.kick{width:100%;height:84px;border-radius:18px;}
+  .pad .lbl{line-height:1.05;text-align:center;white-space:pre-line;}
+  .pad .key{margin-top:6px;font-size:10px;opacity:.65;border:1px solid currentColor;border-radius:5px;padding:1px 6px;font-weight:600;}
+  .pad.on{transform:scale(.94);color:#0a0706;}
+
+  .cta{margin-top:44px;text-align:center;border-radius:24px;padding:36px 22px;
+    background:linear-gradient(135deg,rgba(255,122,24,.13),rgba(255,46,99,.10));border:1px solid rgba(255,122,24,.27);}
+  .cta h2{font-family:'Anton',sans-serif;font-size:clamp(26px,6vw,40px);margin:0;line-height:1;}
+  .cta p{color:#d8cbb9;max-width:420px;margin:14px auto 24px;font-size:16px;line-height:1.55;}
+  .cta .links{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+  .lnk{border-radius:12px;padding:14px 22px;font-weight:700;font-size:15px;text-decoration:none;display:inline-block;}
+  .lnk.solid{background:#25D366;color:#0a2912;}
+  .lnk.ghost{background:transparent;color:var(--ink);border:1px solid rgba(255,255,255,.22);}
+  .foot{text-align:center;color:#6d6256;font-size:12px;margin-top:28px;}
+
+  /* ── share area ── */
+  #shareArea{display:none;flex-direction:column;align-items:center;gap:10px;
+    margin:-4px 0 22px;animation:rise .45s ease both;}
+  #shareArea.show{display:flex;}
+  .share-btn{
+    background:linear-gradient(135deg,#E1306C 0%,#833AB4 50%,#F77737 100%);
+    color:#fff;border:none;border-radius:50px;padding:15px 36px;
+    font-family:'Archivo',sans-serif;font-weight:700;font-size:16px;
+    cursor:pointer;letter-spacing:.02em;
+    box-shadow:0 8px 28px rgba(225,48,108,.45);
+    animation:sharePulse 2.2s ease infinite;
+  }
+  @keyframes sharePulse{
+    0%,100%{box-shadow:0 8px 28px rgba(225,48,108,.45);}
+    50%{box-shadow:0 8px 40px rgba(247,119,55,.75);}
+  }
+  #shareHint{font-size:12px;color:#8a7d6e;text-align:center;min-height:16px;}
+
+  @media(max-width:520px){
+    .pad{width:88px;height:86px;font-size:13px;}
+    .pad.big{width:108px;height:96px;}
+    .row{gap:8px;}
+    .bar{justify-content:center;}.score{text-align:center;width:100%;}
+  }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+<main>
+  <p class="eyebrow">Diego Juantorena · Batería</p>
+  <h1>¿TENÉS<br><span class="b">RITMO?</span></h1>
+  <p class="sub">Tocá, jugá, sentí el groove. Después… lo hacemos de verdad. 🥁</p>
+
+  <div class="bar">
+    <div class="btns">
+      <button id="game" class="b-primary">▶ Seguí el ritmo</button>
+      <button id="groove" class="b-ghost">🎵 Zapar ritmo</button>
+    </div>
+    <div class="score">
+      <div id="round" class="round">—</div>
+      <div class="score-line">
+        <span class="slbl">Puntaje</span>
+        <span id="scoreCur" class="sval">—</span>
+      </div>
+      <div class="score-line">
+        <span class="slbl">🏆 Récord</span>
+        <span id="scoreRec" class="sval accent">0</span>
+      </div>
+    </div>
+  </div>
+  <p id="status" class="status">Tocá los pads o usá el teclado</p>
+
+  <div id="shareArea">
+    <button class="share-btn" id="shareBtn">📲 Compartir en Instagram</button>
+    <p id="shareHint">Tap para abrir el selector de apps</p>
+  </div>
+
+  <div class="tempo" id="tempoBox">
+    <span style="font-size:12px;color:#8a7d6e">Tempo</span>
+    <input id="bpm" type="range" min="60" max="150" value="92">
+    <span class="bpm"><span id="bpmVal">92</span> bpm</span>
+  </div>
+
+  <div class="kit">
+    <div class="row" id="rowTop"></div>
+    <div class="row" id="rowMid"></div>
+    <div class="row" id="rowKick"></div>
+  </div>
+
+  <section class="cta">
+    <h2>¿TE PICÓ EL BICHITO?</h2>
+    <p>Diego enseña batería para todos los niveles — presencial en Barcelona u online.
+       Más de 20 años de groove sobre el escenario, ahora para vos.</p>
+    <div class="links">
+      <a class="lnk solid" target="_blank" rel="noreferrer"
+         href="https://wa.me/34664558142?text=Hola%20Diego!%20Jugu%C3%A9%20con%20la%20bater%C3%ADa%20en%20tu%20web%20y%20quiero%20info%20sobre%20las%20clases%20%F0%9F%A5%81">
+        Escribime por WhatsApp
+      </a>
+      <a class="lnk ghost" target="_blank" rel="noreferrer" href="https://diegojuantorena.com/clases-de-bateria/">Ver las clases</a>
+      <a class="lnk ghost" target="_blank" rel="noreferrer" href="https://www.instagram.com/diegojuantorena/">Instagram</a>
+    </div>
+  </section>
+
+  <p class="foot">Hecho con cariño para Diego · sonido 100% sintetizado en tu navegador</p>
+</main>
+<div id="recBanner">¡NUEVO RÉCORD! 🔥</div>
+
+<script>
+(function(){
+  var ACCENT="#FF7A18", HOT="#FF2E63";
+  var PADS=[
+    {id:"crash",label:"Crash",key:"K",color:"#FFD166",row:"top"},
+    {id:"openhat",label:"Hi-Hat\nabierto",key:"J",color:"#06D6A0",row:"top"},
+    {id:"hihat",label:"Hi-Hat",key:"F",color:"#4CC9F0",row:"top"},
+    {id:"tom",label:"Tom",key:"D",color:"#B388FF",row:"mid"},
+    {id:"snare",label:"Redoblante",key:"S",color:HOT,row:"mid"},
+    {id:"kick",label:"Bombo",key:"A",color:ACCENT,row:"kick"}
+  ];
+  var KEYMAP={}; PADS.forEach(function(p){KEYMAP[p.key.toLowerCase()]=p.id;});
+  var els={};
+
+  // ── audio ──
+  var ac=null;
+  function ctx(){ if(!ac) ac=new (window.AudioContext||window.webkitAudioContext)();
+    if(ac.state==="suspended") ac.resume(); return ac; }
+  function noise(a,dur){ var n=a.sampleRate*dur,buf=a.createBuffer(1,n,a.sampleRate),d=buf.getChannelData(0);
+    for(var i=0;i<n;i++) d[i]=Math.random()*2-1; var s=a.createBufferSource(); s.buffer=buf; return s; }
+  function synth(id){
+    var a=ctx(),t=a.currentTime,out=a.destination;
+    if(id==="kick"){var o=a.createOscillator(),g=a.createGain();
+      o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(46,t+.12);
+      g.gain.setValueAtTime(1,t);g.gain.exponentialRampToValueAtTime(.001,t+.42);
+      o.connect(g).connect(out);o.start(t);o.stop(t+.45);}
+    else if(id==="snare"){var s=noise(a,.2),hp=a.createBiquadFilter(),g=a.createGain();
+      hp.type="highpass";hp.frequency.value=1400;g.gain.setValueAtTime(.9,t);
+      g.gain.exponentialRampToValueAtTime(.001,t+.18);s.connect(hp).connect(g).connect(out);s.start(t);s.stop(t+.2);
+      var o=a.createOscillator(),og=a.createGain();o.type="triangle";o.frequency.value=180;
+      og.gain.setValueAtTime(.5,t);og.gain.exponentialRampToValueAtTime(.001,t+.12);
+      o.connect(og).connect(out);o.start(t);o.stop(t+.12);}
+    else if(id==="hihat"||id==="openhat"){var dur=id==="hihat"?.05:.34;
+      var s=noise(a,dur+.05),hp=a.createBiquadFilter(),g=a.createGain();
+      hp.type="highpass";hp.frequency.value=7000;g.gain.setValueAtTime(.45,t);
+      g.gain.exponentialRampToValueAtTime(.001,t+dur);s.connect(hp).connect(g).connect(out);s.start(t);s.stop(t+dur+.05);}
+    else if(id==="tom"){var o=a.createOscillator(),g=a.createGain();
+      o.frequency.setValueAtTime(220,t);o.frequency.exponentialRampToValueAtTime(90,t+.3);
+      g.gain.setValueAtTime(.9,t);g.gain.exponentialRampToValueAtTime(.001,t+.4);
+      o.connect(g).connect(out);o.start(t);o.stop(t+.42);}
+    else if(id==="crash"){var s=noise(a,1.2),hp=a.createBiquadFilter(),g=a.createGain();
+      hp.type="highpass";hp.frequency.value=5000;g.gain.setValueAtTime(.5,t);
+      g.gain.exponentialRampToValueAtTime(.001,t+1.1);s.connect(hp).connect(g).connect(out);s.start(t);s.stop(t+1.2);}
+  }
+  var timers={};
+  function flash(id){var el=els[id]; if(!el) return;
+    el.classList.add("on"); el.style.borderColor=padColor(id);
+    el.style.background="radial-gradient(circle at 50% 35%,"+padColor(id)+","+padColor(id)+"77)";
+    el.style.boxShadow="0 0 28px "+padColor(id)+"aa, inset 0 0 18px "+padColor(id)+"66";
+    clearTimeout(timers[id]);
+    timers[id]=setTimeout(function(){el.classList.remove("on");el.style.borderColor="";el.style.background="";el.style.boxShadow="";},130);
+  }
+  function padColor(id){for(var i=0;i<PADS.length;i++) if(PADS[i].id===id) return PADS[i].color;}
+
+  // ── share ──
+  // ↓ Actualizá esta URL cuando subas el juego
+  var GAME_URL="https://diegojuantorena.com/ritmo";
+
+  function roundRect(c,x,y,w,h,r){
+    c.beginPath();c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.quadraticCurveTo(x+w,y,x+w,y+r);
+    c.lineTo(x+w,y+h-r);c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    c.lineTo(x+r,y+h);c.quadraticCurveTo(x,y+h,x,y+h-r);
+    c.lineTo(x,y+r);c.quadraticCurveTo(x,y,x+r,y);c.closePath();c.fill();
+  }
+
+  function generateCard(finalScore,isRec,cb){
+    var cv=document.createElement("canvas");cv.width=1080;cv.height=1080;
+    var c=cv.getContext("2d");
+
+    // fondo
+    c.fillStyle="#0a0706";c.fillRect(0,0,1080,1080);
+    var g=c.createRadialGradient(540,280,0,540,280,750);
+    g.addColorStop(0,"rgba(58,24,5,.95)");g.addColorStop(.5,"rgba(26,10,3,.8)");
+    g.addColorStop(1,"rgba(10,7,6,0)");
+    c.fillStyle=g;c.fillRect(0,0,1080,1080);
+
+    // grano
+    for(var i=0;i<22000;i++){
+      c.fillStyle="rgba(255,255,255,"+(Math.random()*.035)+")";
+      c.fillRect(Math.random()*1080,Math.random()*1080,1,1);
+    }
+
+    // líneas diagonales decorativas
+    c.save();c.strokeStyle="rgba(255,122,24,.055)";c.lineWidth=1;
+    for(var l=0;l<6;l++){c.beginPath();c.moveTo(-100,180+l*160);c.lineTo(1180,l*160);c.stroke();}
+    c.restore();
+
+    // ── platillos / pads decorativos (fondo, baja opacidad) ──
+    function drum(x,y,rx,ry,col){
+      c.save();
+      c.strokeStyle=col;c.lineWidth=2.5;c.globalAlpha=.45;
+      c.shadowBlur=18;c.shadowColor=col;
+      c.beginPath();c.ellipse(x,y,rx,ry,0,0,Math.PI*2);c.stroke();
+      c.globalAlpha=.2;c.lineWidth=1;
+      c.beginPath();c.ellipse(x,y,rx*.62,ry*.62,0,0,Math.PI*2);c.stroke();
+      c.restore();
+    }
+    drum(540,940,200,72,"#FF7A18");   // bombo
+    drum(310,875,92,33,"#FF2E63");    // snare
+    drum(720,850,78,28,"#B388FF");    // tom
+    drum(140,800,86,15,"#4CC9F0");    // hihat
+    drum(910,775,96,17,"#FFD166");    // crash
+    // baquetas decorativas
+    c.save();c.strokeStyle="rgba(245,239,230,.3)";c.lineWidth=4;c.lineCap="round";
+    c.beginPath();c.moveTo(530,620);c.lineTo(400,870);c.stroke();
+    c.beginPath();c.moveTo(550,620);c.lineTo(680,870);c.stroke();
+    c.restore();
+
+    // ── textos ──
+    // eyebrow
+    c.save();c.fillStyle="#FF7A18";c.font="700 22px 'Archivo',sans-serif";
+    c.textAlign="center";c.letterSpacing="6px";
+    c.fillText("CLASES DE BATERÍA · DIEGOJUANTORENA.COM",540,88);c.restore();
+
+    // divisor
+    c.save();var dg=c.createLinearGradient(180,0,900,0);
+    dg.addColorStop(0,"transparent");dg.addColorStop(.5,"rgba(255,122,24,.5)");dg.addColorStop(1,"transparent");
+    c.strokeStyle=dg;c.lineWidth=1;c.beginPath();c.moveTo(180,108);c.lineTo(900,108);c.stroke();c.restore();
+
+    // challenge
+    c.save();c.fillStyle="rgba(245,239,230,.5)";c.font="400 40px 'Archivo',sans-serif";
+    c.textAlign="center";c.fillText("¿Podés superarme? 🥁",540,200);c.restore();
+
+    // "YO HICE"
+    c.save();c.fillStyle="rgba(245,239,230,.3)";c.font="700 30px 'Archivo',sans-serif";
+    c.textAlign="center";c.letterSpacing="10px";c.fillText("YO HICE",540,285);c.restore();
+
+    // score grande
+    c.save();c.shadowBlur=55;c.shadowColor="#FF7A18";
+    c.fillStyle="#FF7A18";c.font="400 230px 'Anton',sans-serif";
+    c.textAlign="center";c.fillText(finalScore,540,510);c.restore();
+
+    // "PUNTOS"
+    c.save();c.fillStyle="rgba(245,239,230,.55)";c.font="700 46px 'Archivo',sans-serif";
+    c.textAlign="center";c.letterSpacing="8px";c.fillText("PUNTOS",540,578);c.restore();
+
+    // badge récord
+    if(isRec){
+      c.save();
+      var bg=c.createLinearGradient(330,610,750,670);
+      bg.addColorStop(0,"#FF2E63");bg.addColorStop(1,"#FF7A18");
+      c.fillStyle=bg;roundRect(c,330,608,420,62,31);
+      c.fillStyle="#0a0706";c.font="700 26px 'Archivo',sans-serif";
+      c.textAlign="center";c.letterSpacing="2px";c.fillText("¡NUEVO RÉCORD! 🔥",540,648);
+      c.restore();
+    }
+
+    // handle
+    c.save();c.fillStyle="rgba(245,239,230,.9)";c.font="400 42px 'Anton',sans-serif";
+    c.textAlign="center";c.fillText("@diegojuantorena",540,968);c.restore();
+
+    // url
+    c.save();c.fillStyle="rgba(205,191,174,.55)";c.font="400 24px 'Archivo',sans-serif";
+    c.textAlign="center";c.fillText(GAME_URL,540,1012);c.restore();
+
+    cb(cv);
+  }
+
+  function shareScore(){
+    if(!pendingBlob){ els.shareHint.textContent="Un momento…"; return; }
+    var text="¡Hice "+score+" pts en el juego de ritmo de @diegojuantorena! ¿Podés superarme? 🥁\n"+GAME_URL;
+    var file=new File([pendingBlob],"mi-ritmo-"+score+"pts.png",{type:"image/png"});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      els.shareHint.textContent="";
+      navigator.share({files:[file],text:text,url:GAME_URL}).catch(function(){});
+    } else {
+      var a=document.createElement("a");
+      a.href=URL.createObjectURL(pendingBlob);a.download="mi-ritmo-"+score+"pts.png";a.click();
+      try{navigator.clipboard.writeText(text);}catch(e){}
+      els.shareHint.textContent="📥 Guardá la imagen y subila a tu Story de Instagram";
+    }
+  }
+
+  // ── estado juego ──
+  var LS_KEY="dj_drums_record";
+  var seq=[],phase="idle",ui=0,score=0,bestScore=0,pendingBlob=null;
+  try{ bestScore=parseInt(localStorage.getItem(LS_KEY)||"0",10)||0; }catch(e){}
+
+  function pregenerateCard(){
+    pendingBlob=null;
+    var isRec=score>0&&score===bestScore;
+    document.fonts.ready.then(function(){
+      generateCard(score,isRec,function(canvas){
+        canvas.toBlob(function(blob){ pendingBlob=blob; },"image/png");
+      });
+    });
+  }
+
+  function showRecBanner(){
+    var b=els.recBanner; b.classList.add("show");
+    clearTimeout(b._t); b._t=setTimeout(function(){b.classList.remove("show");},2200);
+  }
+
+  function setStatus(){
+    var s={idle:"Tocá los pads o usá el teclado",watch:"Mirá y escuchá…",
+      play:"Tu turno — repetí los "+seq.length+" golpes",
+      over:"¡"+score+" pts! "+( score>0&&score===bestScore?"(¡Tu mejor marca!) ":"")+"¿Otra?"}[phase];
+    els.status.textContent=s;
+    els.round.textContent=phase==="idle"?"—":"Ronda "+seq.length;
+    els.round.classList.toggle("over",phase==="over");
+    els.scoreCur.textContent=phase==="idle"?"—":score+" pts";
+    els.scoreRec.textContent=bestScore+" pts";
+    els.scoreRec.classList.toggle("record",phase==="over"&&score>0&&score===bestScore);
+    els.game.textContent=phase==="idle"?"▶ Seguí el ritmo":phase==="over"?"↺ Otra vez":"● Jugando";
+    els.game.classList.toggle("live",phase==="play"||phase==="watch");
+    els.shareArea.classList.toggle("show",phase==="over");
+    if(phase!=="over") els.shareHint.textContent="";
+  }
+
+  function hit(id,fromUser){
+    synth(id);flash(id);
+    if(fromUser&&phase==="play"){
+      if(seq[ui]===id){ ui++;
+        if(ui===seq.length){
+          score+=seq.length*10;        // +10 × ronda por cada ronda completada
+          phase="watch"; setStatus();
+          setTimeout(function(){nextRound();},650);
+        }
+      } else {
+        // fallo — guardar récord
+        if(score>bestScore){
+          bestScore=score;
+          try{ localStorage.setItem(LS_KEY,bestScore); }catch(e){}
+          setTimeout(showRecBanner,300);
+        }
+        phase="over"; setStatus(); pregenerateCard();
+        [0,80,160].forEach(function(d){setTimeout(function(){synth("crash");},d);});
+      }
+    }
+  }
+  function playback(){phase="watch";setStatus();
+    seq.forEach(function(id,i){ setTimeout(function(){ synth(id);flash(id);
+      if(i===seq.length-1){ setTimeout(function(){ui=0;phase="play";setStatus();},460); }
+    }, i*460+350); });
+  }
+  function nextRound(){ seq.push(PADS[Math.floor(Math.random()*PADS.length)].id); playback(); }
+  function startGame(){ ctx(); if(grooving) stopGroove(); seq=[];ui=0;score=0;pendingBlob=null; nextRound(); }
+
+  // ── groove ──
+  var grooving=false,gtimer=null,step=0,bpm=92;
+  function stopGroove(){clearTimeout(gtimer);gtimer=null;grooving=false;
+    els.groove.textContent="🎵 Zapar ritmo"; els.tempoBox.style.display="none";}
+  function startGroove(){ ctx(); if(phase!=="idle"&&phase!=="over") return;
+    step=0;grooving=true; els.groove.textContent="⏸ Parar ritmo"; els.tempoBox.style.display="flex";
+    (function tick(){ var s=step%8; synth("hihat");flash("hihat");
+      if(s===0||s===4){synth("kick");flash("kick");}
+      if(s===2||s===6){synth("snare");flash("snare");}
+      step++; clearTimeout(gtimer); gtimer=setTimeout(tick,(60/bpm/2)*1000);
+    })();
+  }
+
+  // ── render pads ──
+  function build(){
+    PADS.forEach(function(p){
+      var b=document.createElement("button");
+      b.className="pad"+(p.row==="mid"?" big":"")+(p.row==="kick"?" kick":"");
+      b.innerHTML='<span class="lbl">'+p.label.replace(/\n/g,"<br>")+'</span><span class="key">'+p.key+'</span>';
+      b.addEventListener("pointerdown",function(e){e.preventDefault();hit(p.id,true);});
+      els[p.id]=b;
+      var target = p.row==="top"?"rowTop":p.row==="mid"?"rowMid":"rowKick";
+      els[target].appendChild(b);
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded",function(){
+    ["game","groove","round","scoreCur","scoreRec","status","shareArea","shareBtn","shareHint","tempoBox","bpm","bpmVal","recBanner"]
+      .forEach(function(k){els[k]=document.getElementById(k);});
+    els.rowTop=document.getElementById("rowTop");els.rowMid=document.getElementById("rowMid");els.rowKick=document.getElementById("rowKick");
+    build();
+    els.game.addEventListener("click",startGame);
+    els.groove.addEventListener("click",function(){grooving?stopGroove():startGroove();});
+    els.bpm.addEventListener("input",function(e){bpm=+e.target.value;els.bpmVal.textContent=bpm;});
+    els.shareBtn.addEventListener("click",shareScore);
+    window.addEventListener("keydown",function(e){ if(e.repeat) return;
+      var id=KEYMAP[(e.key||"").toLowerCase()]; if(id){e.preventDefault();hit(id,true);} });
+    setStatus();
+  });
+})();
+</script>
+</body>
+</html>
