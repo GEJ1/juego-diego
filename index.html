@@ -343,14 +343,13 @@
   var isIGBrowser=/Instagram/.test(navigator.userAgent);
 
   function showImgOverlay(){
-    if(!pendingBlob){ els.shareHint.textContent="Un momento…"; return; }
-    var url=URL.createObjectURL(pendingBlob);
-    els.overlayImg.src=url;
+    if(!pendingDataUrl){ els.shareHint.textContent="Un momento…"; return; }
+    els.overlayImg.src=pendingDataUrl;
     els.imgOverlay.classList.add("show");
   }
 
   function shareScore(){
-    if(!pendingBlob){ els.shareHint.textContent="Un momento…"; return; }
+    if(!pendingBlob&&!pendingDataUrl){ els.shareHint.textContent="Un momento…"; return; }
     if(isIGBrowser){ showImgOverlay(); return; }
     var text="¡Hice "+score+" pts en el juego de ritmo de @diegojuantorena! ¿Podés superarme? 🥁\n"+GAME_URL;
     var file=new File([pendingBlob],"mi-ritmo-"+score+"pts.png",{type:"image/png"});
@@ -367,15 +366,23 @@
 
   // ── estado juego ──
   var LS_KEY="dj_drums_record";
-  var seq=[],phase="idle",ui=0,score=0,bestScore=0,pendingBlob=null;
+  var seq=[],phase="idle",ui=0,score=0,bestScore=0,pendingBlob=null,pendingDataUrl=null;
   try{ bestScore=parseInt(localStorage.getItem(LS_KEY)||"0",10)||0; }catch(e){}
 
   function pregenerateCard(){
-    pendingBlob=null;
+    pendingBlob=null; pendingDataUrl=null;
     var isRec=score>0&&score===bestScore;
-    document.fonts.ready.then(function(){
+    // timeout de 2s por si fonts.ready no resuelve en el WebView de Instagram
+    var fontsReady=Promise.race([
+      document.fonts.ready,
+      new Promise(function(r){setTimeout(r,2000);})
+    ]);
+    fontsReady.then(function(){
       generateCard(score,isRec,function(canvas){
-        canvas.toBlob(function(blob){ pendingBlob=blob; },"image/png");
+        pendingDataUrl=canvas.toDataURL("image/png");
+        if(!isIGBrowser){
+          canvas.toBlob(function(blob){ pendingBlob=blob; },"image/png");
+        }
       });
     });
   }
