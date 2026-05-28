@@ -113,6 +113,22 @@
     padding:16px 0;width:100%;font-family:'Archivo',sans-serif;font-weight:700;font-size:16px;
     cursor:pointer;touch-action:auto;}
 
+  /* ── metrónomo visual ── */
+  .metro-wrap{display:none;justify-content:center;align-items:center;gap:10px;margin-bottom:14px;}
+  .metro-wrap.show{display:flex;}
+  .metro-dot{width:18px;height:18px;border-radius:50%;background:var(--accent);opacity:.25;
+    transition:opacity .06s,transform .06s,box-shadow .06s;}
+  .metro-dot.beat{opacity:1;transform:scale(1.45);box-shadow:0 0 18px var(--accent);}
+  .metro-lbl{font-size:11px;color:#8a7d6e;letter-spacing:.1em;text-transform:uppercase;}
+
+  /* ── feedback de timing ── */
+  .timing-fb{text-align:center;font-family:'Anton',sans-serif;font-size:20px;
+    min-height:28px;margin-bottom:6px;opacity:0;transition:opacity .15s;}
+  .timing-fb.show{opacity:1;}
+  .timing-fb.good{color:var(--accent);}
+  .timing-fb.ok{color:#FFD166;}
+  .timing-fb.bad{color:var(--hot);}
+
   @media(max-width:520px){
     .pad{width:88px;height:86px;font-size:13px;}
     .pad.big{width:108px;height:96px;}
@@ -133,6 +149,7 @@
   <div class="bar">
     <div class="btns">
       <button id="game" class="b-primary">▶ Seguí el ritmo</button>
+      <button id="rhythm" class="b-ghost">🎵 Canciones</button>
       <button id="groove" class="b-ghost">🎵 Zapar ritmo</button>
     </div>
     <div class="score">
@@ -152,6 +169,12 @@
   <div id="shareArea">
     <button class="share-btn" id="shareBtn">📲 Compartir en Instagram</button>
     <p id="shareHint">Tap para abrir el selector de apps</p>
+  </div>
+
+  <div class="timing-fb" id="timingFb"></div>
+  <div class="metro-wrap" id="metro">
+    <span class="metro-dot" id="metroDot"></span>
+    <span class="metro-lbl">seguí el beat</span>
   </div>
 
   <div class="tempo" id="tempoBox">
@@ -380,6 +403,120 @@
     }
   }
 
+  // ── modo canciones ──
+  var SONGS=[
+    {name:"We Will Rock You",emoji:"🤘",hits:[
+      {id:"kick",t:0},{id:"kick",t:380},{id:"snare",t:760},
+      {id:"kick",t:1520},{id:"kick",t:1900},{id:"snare",t:2280}
+    ]},
+    {name:"Ritmo disco",emoji:"🪩",hits:[
+      {id:"kick",t:0},{id:"snare",t:500},{id:"kick",t:1000},{id:"snare",t:1500},
+      {id:"kick",t:2000},{id:"snare",t:2500}
+    ]},
+    {name:"Samba",emoji:"🌴",hits:[
+      {id:"kick",t:0},{id:"tom",t:350},{id:"snare",t:700},
+      {id:"kick",t:1050},{id:"kick",t:1400},{id:"snare",t:1750}
+    ]},
+    {name:"Intro rock",emoji:"🎸",hits:[
+      {id:"crash",t:0},{id:"kick",t:500},{id:"hihat",t:750},{id:"snare",t:1000},
+      {id:"hihat",t:1250},{id:"kick",t:1500},{id:"snare",t:2000}
+    ]}
+  ];
+
+  var songMode=false, curSong=null, songT0=0, songUI=0, songCorrect=0;
+  var songExpected=[], sMissTimers=[], sMetroTimer=null, SONG_TOL=220;
+
+  function clearSong(){
+    sMissTimers.forEach(clearTimeout); sMissTimers=[];
+    clearTimeout(sMetroTimer); sMetroTimer=null;
+    if(els.metroDot) els.metroDot.classList.remove("beat");
+    if(els.metro) els.metro.classList.remove("show");
+  }
+
+  function showTimingFb(txt,cls){
+    els.timingFb.textContent=txt;
+    els.timingFb.className="timing-fb show "+cls;
+    clearTimeout(els.timingFb._t);
+    els.timingFb._t=setTimeout(function(){els.timingFb.classList.remove("show");},700);
+  }
+
+  function songAvgBeat(){
+    var h=curSong.hits;
+    return h.length>1 ? Math.round(h[h.length-1].t/(h.length-1)) : 400;
+  }
+
+  function startSongMetro(beatMs){
+    els.metro.classList.add("show");
+    function pulse(){
+      if(!songMode){ clearSong(); return; }
+      els.metroDot.classList.add("beat");
+      setTimeout(function(){els.metroDot.classList.remove("beat");},80);
+      sMetroTimer=setTimeout(pulse,beatMs);
+    }
+    pulse();
+  }
+
+  function playSongPlayback(){
+    phase="watch";
+    var beatMs=songAvgBeat();
+    songT0=performance.now();
+    els.status.textContent=curSong.emoji+" "+curSong.name+" — mirá y escuchá…";
+    els.rhythm.textContent="● "+curSong.name;
+    els.rhythm.classList.add("live");
+    startSongMetro(beatMs);
+    curSong.hits.forEach(function(h,i){
+      setTimeout(function(){
+        synth(h.id); flash(h.id);
+        if(i===curSong.hits.length-1){
+          setTimeout(function(){
+            songUI=0; songCorrect=0;
+            buildSongExpected();
+            phase="play";
+            els.status.textContent="Tu turno — reproducí "+curSong.name;
+          }, beatMs*2);
+        }
+      }, h.t);
+    });
+  }
+
+  function buildSongExpected(){
+    var hits=curSong.hits, beatMs=songAvgBeat();
+    // +beatMs extra de gracia antes del primer golpe esperado
+    var playerStart=songT0+hits[hits.length-1].t+beatMs*3;
+    songExpected=hits.map(function(h){ return {t:playerStart+h.t, id:h.id}; });
+    songExpected.forEach(function(exp,idx){
+      var delay=Math.max(100, exp.t+SONG_TOL+80-performance.now());
+      sMissTimers.push(setTimeout(function(){
+        if(songMode&&phase==="play"&&songUI===idx){
+          showTimingFb("¡Tarde!","bad"); songAdvance();
+        }
+      },delay));
+    });
+  }
+
+  function songAdvance(){
+    songUI++;
+    if(songUI>=songExpected.length) endSong();
+  }
+
+  function endSong(){
+    clearSong(); songMode=false;
+    var total=curSong.hits.length;
+    els.status.textContent=curSong.emoji+" "+songCorrect+"/"+total+" golpes — ¿otra canción?";
+    els.round.textContent="—";
+    els.scoreCur.textContent=songCorrect*10+" pts";
+    els.rhythm.textContent="🎵 Canciones";
+    els.rhythm.classList.remove("live");
+    phase="idle";
+  }
+
+  function startSongMode(){
+    ctx(); if(grooving) stopGroove();
+    clearSong(); songMode=true; seq=[];score=0;pendingBlob=null;
+    curSong=SONGS[Math.floor(Math.random()*SONGS.length)];
+    playSongPlayback();
+  }
+
   // ── estado juego ──
   var LS_KEY="dj_drums_record";
   var seq=[],phase="idle",ui=0,score=0,bestScore=0,pendingBlob=null,pendingDataUrl=null;
@@ -427,14 +564,28 @@
   function hit(id,fromUser){
     synth(id);flash(id);
     if(fromUser&&phase==="play"){
+      if(songMode){
+        var exp=songExpected[songUI]; if(!exp) return;
+        var diff=performance.now()-exp.t;
+        if(diff < -SONG_TOL) return; // muy temprano, ignorar
+        if(exp.id!==id){ showTimingFb("¡Pad incorrecto!","bad"); songAdvance(); return; }
+        if(diff > SONG_TOL){ showTimingFb("¡Tarde!","bad"); songAdvance(); return; }
+        clearTimeout(sMissTimers[songUI]);
+        songCorrect++;
+        var abs=Math.abs(diff);
+        if(abs<80) showTimingFb("¡Perfecto! 🎯","good");
+        else if(abs<150) showTimingFb("¡Bien!","ok");
+        else showTimingFb("Casi…","ok");
+        songAdvance();
+        return;
+      }
       if(seq[ui]===id){ ui++;
         if(ui===seq.length){
-          score+=seq.length*10;        // +10 × ronda por cada ronda completada
+          score+=seq.length*10;
           phase="watch"; setStatus();
           setTimeout(function(){nextRound();},650);
         }
       } else {
-        // fallo — guardar récord
         if(score>bestScore){
           bestScore=score;
           try{ localStorage.setItem(LS_KEY,bestScore); }catch(e){}
@@ -451,7 +602,7 @@
     }, i*460+350); });
   }
   function nextRound(){ seq.push(PADS[Math.floor(Math.random()*PADS.length)].id); playback(); }
-  function startGame(){ ctx(); if(grooving) stopGroove(); seq=[];ui=0;score=0;pendingBlob=null; nextRound(); }
+  function startGame(){ ctx(); if(grooving) stopGroove(); clearSong(); songMode=false; seq=[];ui=0;score=0;pendingBlob=null; nextRound(); }
 
   // ── groove ──
   var grooving=false,gtimer=null,step=0,bpm=92;
@@ -480,11 +631,12 @@
   }
 
   document.addEventListener("DOMContentLoaded",function(){
-    ["game","groove","round","scoreCur","scoreRec","status","shareArea","shareBtn","shareHint","tempoBox","bpm","bpmVal","recBanner","audioModal","audioUnlockBtn"]
+    ["game","rhythm","groove","round","scoreCur","scoreRec","status","shareArea","shareBtn","shareHint","tempoBox","bpm","bpmVal","recBanner","audioModal","audioUnlockBtn","metro","metroDot","timingFb"]
       .forEach(function(k){els[k]=document.getElementById(k);});
     els.rowTop=document.getElementById("rowTop");els.rowMid=document.getElementById("rowMid");els.rowKick=document.getElementById("rowKick");
     build();
     els.game.addEventListener("click",startGame);
+    els.rhythm.addEventListener("click",startSongMode);
     els.groove.addEventListener("click",function(){grooving?stopGroove():startGroove();});
     els.bpm.addEventListener("input",function(e){bpm=+e.target.value;els.bpmVal.textContent=bpm;});
     els.shareBtn.addEventListener("click",shareScore);
