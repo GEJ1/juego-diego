@@ -97,23 +97,25 @@
   }
   #shareHint{font-size:12px;color:#8a7d6e;text-align:center;min-height:16px;}
 
-  /* overlay imagen para Instagram WebView */
-  #imgOverlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.88);
-    flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px;
-    touch-action:auto;-webkit-transform:translateZ(0);transform:translateZ(0);
-    -webkit-overflow-scrolling:touch;overflow-y:auto;}
+  /* overlay "abrí en el navegador" para Instagram WebView */
+  #imgOverlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.93);
+    flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:28px;
+    touch-action:auto;-webkit-transform:translateZ(0);transform:translateZ(0);}
   #imgOverlay.show{display:flex;}
-  #imgOverlay img{max-width:min(380px,90vw);border-radius:16px;box-shadow:0 0 60px rgba(0,0,0,.8);
-    touch-action:auto;pointer-events:auto;
-    -webkit-touch-callout:default !important;
-    -webkit-user-select:auto !important;user-select:auto !important;}
-  #saveBtn{background:linear-gradient(135deg,#E1306C,#F77737);color:#fff;border:none;
-    border-radius:50px;padding:13px 32px;font-family:'Archivo',sans-serif;font-weight:700;
-    font-size:15px;cursor:pointer;touch-action:auto;pointer-events:auto;}
-  #imgOverlay p{color:#f5efe6;font-size:15px;text-align:center;margin:0;line-height:1.5;}
-  #imgOverlay button{background:rgba(255,255,255,.12);color:#f5efe6;border:1px solid rgba(255,255,255,.25);
-    border-radius:50px;padding:12px 28px;font-family:'Archivo',sans-serif;font-size:14px;font-weight:700;cursor:pointer;
-    touch-action:auto;pointer-events:auto;}
+  #imgOverlay .score-big{font-family:'Anton',sans-serif;font-size:72px;color:var(--accent);line-height:1;text-align:center;}
+  #imgOverlay .score-lbl{font-size:13px;color:#8a7d6e;letter-spacing:.15em;text-transform:uppercase;text-align:center;margin-top:-8px;}
+  .ig-box{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);
+    border-radius:18px;padding:20px;width:100%;max-width:320px;}
+  .ig-box h3{font-family:'Anton',sans-serif;font-size:17px;color:#f5efe6;margin:0 0 14px;letter-spacing:.04em;text-align:center;}
+  .ig-step{display:flex;gap:12px;align-items:flex-start;font-size:14px;color:#cdbfae;line-height:1.45;margin-bottom:10px;}
+  .ig-step:last-child{margin-bottom:0;}
+  .ig-num{font-family:'Anton',sans-serif;color:var(--accent);font-size:18px;flex-shrink:0;width:18px;}
+  #copyBtn{background:var(--accent);color:#0a0706;border:none;border-radius:50px;
+    padding:13px 0;font-family:'Archivo',sans-serif;font-weight:700;font-size:15px;
+    cursor:pointer;touch-action:auto;pointer-events:auto;width:100%;max-width:320px;}
+  #copyMsg{font-size:12px;color:#8a7d6e;text-align:center;min-height:16px;}
+  #overlayClose{background:transparent;color:#6d6256;border:none;font-family:'Archivo',sans-serif;
+    font-size:13px;cursor:pointer;touch-action:auto;pointer-events:auto;padding:8px;}
 
   @media(max-width:520px){
     .pad{width:88px;height:86px;font-size:13px;}
@@ -186,9 +188,16 @@
 </main>
 <div id="recBanner">¡NUEVO RÉCORD! 🔥</div>
 <div id="imgOverlay">
-  <img id="overlayImg" src="" alt="Tu resultado">
-  <p id="overlayHint">Mantené presionada la imagen<br>para guardarla y subirla a tu Story 👆</p>
-  <button id="saveBtn">⬇ Guardar imagen</button>
+  <div class="score-big" id="overlayScore"></div>
+  <div class="score-lbl">puntos</div>
+  <div class="ig-box">
+    <h3>📲 PARA COMPARTIR</h3>
+    <div class="ig-step"><span class="ig-num">1</span><span>Tocá los <b>···</b> (arriba a la derecha)</span></div>
+    <div class="ig-step"><span class="ig-num">2</span><span>Elegí <b>"Abrir en Safari"</b> o <b>"Abrir en Chrome"</b></span></div>
+    <div class="ig-step"><span class="ig-num">3</span><span>Tocá el botón de compartir ahí — funciona perfecto 🥁</span></div>
+  </div>
+  <button id="copyBtn">Copiar enlace al juego</button>
+  <p id="copyMsg"></p>
   <button id="overlayClose">Cerrar</button>
 </div>
 
@@ -353,14 +362,14 @@
   var isIGBrowser=/Instagram/.test(navigator.userAgent);
 
   function showImgOverlay(){
-    if(!pendingDataUrl){ els.shareHint.textContent="Un momento…"; return; }
-    els.overlayImg.src=pendingDataUrl;
+    els.overlayScore.textContent=score;
+    els.copyMsg.textContent="";
     els.imgOverlay.classList.add("show");
   }
 
   function shareScore(){
-    if(!pendingBlob&&!pendingDataUrl){ els.shareHint.textContent="Un momento…"; return; }
     if(isIGBrowser){ showImgOverlay(); return; }
+    if(!pendingBlob&&!pendingDataUrl){ els.shareHint.textContent="Un momento…"; return; }
     var text="¡Hice "+score+" pts en el juego de ritmo de @diegojuantorena! ¿Podés superarme? 🥁\n"+GAME_URL;
     var file=new File([pendingBlob],"mi-ritmo-"+score+"pts.png",{type:"image/png"});
     if(navigator.canShare&&navigator.canShare({files:[file]})){
@@ -474,7 +483,7 @@
   }
 
   document.addEventListener("DOMContentLoaded",function(){
-    ["game","groove","round","scoreCur","scoreRec","status","shareArea","shareBtn","shareHint","tempoBox","bpm","bpmVal","recBanner","imgOverlay","overlayImg","overlayClose","saveBtn","overlayHint"]
+    ["game","groove","round","scoreCur","scoreRec","status","shareArea","shareBtn","shareHint","tempoBox","bpm","bpmVal","recBanner","imgOverlay","overlayScore","overlayClose","copyBtn","copyMsg"]
       .forEach(function(k){els[k]=document.getElementById(k);});
     els.rowTop=document.getElementById("rowTop");els.rowMid=document.getElementById("rowMid");els.rowKick=document.getElementById("rowKick");
     build();
@@ -485,14 +494,14 @@
     els.overlayClose.addEventListener("click",function(){ els.imgOverlay.classList.remove("show"); });
     els.overlayClose.addEventListener("touchend",function(e){ e.stopPropagation(); els.imgOverlay.classList.remove("show"); });
     els.imgOverlay.addEventListener("touchmove",function(e){ e.stopPropagation(); },{passive:true});
-    els.saveBtn.addEventListener("click",function(){
-      var a=document.createElement("a");
-      a.href=els.overlayImg.src;
-      a.download="mi-ritmo-"+score+"pts.png";
-      a.click();
-      els.overlayHint.textContent="📥 Si no se guardó, mantené presionada la imagen";
+    els.copyBtn.addEventListener("click",function(){
+      navigator.clipboard.writeText(GAME_URL).then(function(){
+        els.copyMsg.textContent="✓ Enlace copiado";
+      }).catch(function(){
+        els.copyMsg.textContent=GAME_URL;
+      });
     });
-    els.saveBtn.addEventListener("touchend",function(e){ e.stopPropagation(); });
+    els.copyBtn.addEventListener("touchend",function(e){ e.stopPropagation(); });
     window.addEventListener("keydown",function(e){ if(e.repeat) return;
       var id=KEYMAP[(e.key||"").toLowerCase()]; if(id){e.preventDefault();hit(id,true);} });
     setStatus();
