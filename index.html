@@ -99,12 +99,16 @@
 
   /* overlay imagen para Instagram WebView */
   #imgOverlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.88);
-    flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px;}
+    flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px;
+    touch-action:auto;-webkit-transform:translateZ(0);transform:translateZ(0);
+    -webkit-overflow-scrolling:touch;overflow-y:auto;}
   #imgOverlay.show{display:flex;}
-  #imgOverlay img{max-width:min(380px,90vw);border-radius:16px;box-shadow:0 0 60px rgba(0,0,0,.8);}
+  #imgOverlay img{max-width:min(380px,90vw);border-radius:16px;box-shadow:0 0 60px rgba(0,0,0,.8);
+    touch-action:auto;-webkit-user-select:auto;user-select:auto;pointer-events:auto;}
   #imgOverlay p{color:#f5efe6;font-size:15px;text-align:center;margin:0;line-height:1.5;}
   #imgOverlay button{background:rgba(255,255,255,.12);color:#f5efe6;border:1px solid rgba(255,255,255,.25);
-    border-radius:50px;padding:12px 28px;font-family:'Archivo',sans-serif;font-size:14px;font-weight:700;cursor:pointer;}
+    border-radius:50px;padding:12px 28px;font-family:'Archivo',sans-serif;font-size:14px;font-weight:700;cursor:pointer;
+    touch-action:auto;pointer-events:auto;}
 
   @media(max-width:520px){
     .pad{width:88px;height:86px;font-size:13px;}
@@ -473,6 +477,8 @@
     els.bpm.addEventListener("input",function(e){bpm=+e.target.value;els.bpmVal.textContent=bpm;});
     els.shareBtn.addEventListener("click",shareScore);
     els.overlayClose.addEventListener("click",function(){ els.imgOverlay.classList.remove("show"); });
+    els.overlayClose.addEventListener("touchend",function(e){ e.stopPropagation(); els.imgOverlay.classList.remove("show"); });
+    els.imgOverlay.addEventListener("touchmove",function(e){ e.stopPropagation(); },{passive:true});
     window.addEventListener("keydown",function(e){ if(e.repeat) return;
       var id=KEYMAP[(e.key||"").toLowerCase()]; if(id){e.preventDefault();hit(id,true);} });
     setStatus();
