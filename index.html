@@ -98,6 +98,21 @@
   #shareHint{font-size:12px;color:#8a7d6e;text-align:center;min-height:16px;}
 
 
+  /* modal unlock audio iOS */
+  #audioModal{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.85);
+    align-items:center;justify-content:center;padding:24px;
+    -webkit-transform:translateZ(0);transform:translateZ(0);}
+  #audioModal.show{display:flex;}
+  .audio-card{background:#1a0f07;border:1px solid rgba(255,122,24,.3);border-radius:24px;
+    padding:32px 24px;max-width:320px;width:100%;text-align:center;display:flex;
+    flex-direction:column;align-items:center;gap:16px;}
+  .audio-card .drum-icon{font-size:52px;line-height:1;}
+  .audio-card h2{font-family:'Anton',sans-serif;font-size:28px;color:var(--ink);margin:0;letter-spacing:.02em;}
+  .audio-card p{color:#cdbfae;font-size:15px;line-height:1.5;margin:0;}
+  #audioUnlockBtn{background:var(--accent);color:#0a0706;border:none;border-radius:50px;
+    padding:16px 0;width:100%;font-family:'Archivo',sans-serif;font-weight:700;font-size:16px;
+    cursor:pointer;touch-action:auto;}
+
   @media(max-width:520px){
     .pad{width:88px;height:86px;font-size:13px;}
     .pad.big{width:108px;height:96px;}
@@ -168,6 +183,14 @@
   <p class="foot">Hecho con cariño para Diego · sonido 100% sintetizado en tu navegador</p>
 </main>
 <div id="recBanner">¡NUEVO RÉCORD! 🔥</div>
+<div id="audioModal">
+  <div class="audio-card">
+    <div class="drum-icon">🥁</div>
+    <h2>ACTIVAR SONIDO</h2>
+    <p>iOS requiere un toque para habilitar el audio. Tocá el botón y empezá a jugar.</p>
+    <button id="audioUnlockBtn">¡Activar y jugar!</button>
+  </div>
+</div>
 
 <script>
 (function(){
@@ -187,6 +210,13 @@
   var ac=null;
   function ctx(){ if(!ac) ac=new (window.AudioContext||window.webkitAudioContext)();
     if(ac.state==="suspended") ac.resume(); return ac; }
+  function unlockAudio(){
+    var a=ctx();
+    var buf=a.createBuffer(1,1,22050);
+    var src=a.createBufferSource();
+    src.buffer=buf; src.connect(a.destination); src.start(0);
+    a.resume();
+  }
   function noise(a,dur){ var n=a.sampleRate*dur,buf=a.createBuffer(1,n,a.sampleRate),d=buf.getChannelData(0);
     for(var i=0;i<n;i++) d[i]=Math.random()*2-1; var s=a.createBufferSource(); s.buffer=buf; return s; }
   function synth(id){
@@ -328,6 +358,7 @@
   }
 
   var isIGBrowser=/Instagram/.test(navigator.userAgent);
+  var isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent);
 
   function shareScore(){
     if(!pendingBlob&&!pendingDataUrl){ els.shareHint.textContent="Un momento…"; return; }
@@ -444,7 +475,7 @@
   }
 
   document.addEventListener("DOMContentLoaded",function(){
-    ["game","groove","round","scoreCur","scoreRec","status","shareArea","shareBtn","shareHint","tempoBox","bpm","bpmVal","recBanner"]
+    ["game","groove","round","scoreCur","scoreRec","status","shareArea","shareBtn","shareHint","tempoBox","bpm","bpmVal","recBanner","audioModal","audioUnlockBtn"]
       .forEach(function(k){els[k]=document.getElementById(k);});
     els.rowTop=document.getElementById("rowTop");els.rowMid=document.getElementById("rowMid");els.rowKick=document.getElementById("rowKick");
     build();
@@ -452,6 +483,13 @@
     els.groove.addEventListener("click",function(){grooving?stopGroove():startGroove();});
     els.bpm.addEventListener("input",function(e){bpm=+e.target.value;els.bpmVal.textContent=bpm;});
     els.shareBtn.addEventListener("click",shareScore);
+    if(isIOS){
+      els.audioModal.classList.add("show");
+      els.audioUnlockBtn.addEventListener("click",function(){
+        unlockAudio();
+        els.audioModal.classList.remove("show");
+      });
+    }
     window.addEventListener("keydown",function(e){ if(e.repeat) return;
       var id=KEYMAP[(e.key||"").toLowerCase()]; if(id){e.preventDefault();hit(id,true);} });
     setStatus();
