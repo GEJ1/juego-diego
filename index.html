@@ -97,6 +97,15 @@
   }
   #shareHint{font-size:12px;color:#8a7d6e;text-align:center;min-height:16px;}
 
+  /* overlay imagen para Instagram WebView */
+  #imgOverlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.88);
+    flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px;}
+  #imgOverlay.show{display:flex;}
+  #imgOverlay img{max-width:min(380px,90vw);border-radius:16px;box-shadow:0 0 60px rgba(0,0,0,.8);}
+  #imgOverlay p{color:#f5efe6;font-size:15px;text-align:center;margin:0;line-height:1.5;}
+  #imgOverlay button{background:rgba(255,255,255,.12);color:#f5efe6;border:1px solid rgba(255,255,255,.25);
+    border-radius:50px;padding:12px 28px;font-family:'Archivo',sans-serif;font-size:14px;font-weight:700;cursor:pointer;}
+
   @media(max-width:520px){
     .pad{width:88px;height:86px;font-size:13px;}
     .pad.big{width:108px;height:96px;}
@@ -167,6 +176,11 @@
   <p class="foot">Hecho con cariño para Diego · sonido 100% sintetizado en tu navegador</p>
 </main>
 <div id="recBanner">¡NUEVO RÉCORD! 🔥</div>
+<div id="imgOverlay">
+  <img id="overlayImg" src="" alt="Tu resultado">
+  <p>Mantené presionada la imagen<br>para guardarla y subirla a tu Story 👆</p>
+  <button id="overlayClose">Cerrar</button>
+</div>
 
 <script>
 (function(){
@@ -326,8 +340,18 @@
     cb(cv);
   }
 
+  var isIGBrowser=/Instagram/.test(navigator.userAgent);
+
+  function showImgOverlay(){
+    if(!pendingBlob){ els.shareHint.textContent="Un momento…"; return; }
+    var url=URL.createObjectURL(pendingBlob);
+    els.overlayImg.src=url;
+    els.imgOverlay.classList.add("show");
+  }
+
   function shareScore(){
     if(!pendingBlob){ els.shareHint.textContent="Un momento…"; return; }
+    if(isIGBrowser){ showImgOverlay(); return; }
     var text="¡Hice "+score+" pts en el juego de ritmo de @diegojuantorena! ¿Podés superarme? 🥁\n"+GAME_URL;
     var file=new File([pendingBlob],"mi-ritmo-"+score+"pts.png",{type:"image/png"});
     if(navigator.canShare&&navigator.canShare({files:[file]})){
@@ -433,7 +457,7 @@
   }
 
   document.addEventListener("DOMContentLoaded",function(){
-    ["game","groove","round","scoreCur","scoreRec","status","shareArea","shareBtn","shareHint","tempoBox","bpm","bpmVal","recBanner"]
+    ["game","groove","round","scoreCur","scoreRec","status","shareArea","shareBtn","shareHint","tempoBox","bpm","bpmVal","recBanner","imgOverlay","overlayImg","overlayClose"]
       .forEach(function(k){els[k]=document.getElementById(k);});
     els.rowTop=document.getElementById("rowTop");els.rowMid=document.getElementById("rowMid");els.rowKick=document.getElementById("rowKick");
     build();
@@ -441,6 +465,7 @@
     els.groove.addEventListener("click",function(){grooving?stopGroove():startGroove();});
     els.bpm.addEventListener("input",function(e){bpm=+e.target.value;els.bpmVal.textContent=bpm;});
     els.shareBtn.addEventListener("click",shareScore);
+    els.overlayClose.addEventListener("click",function(){ els.imgOverlay.classList.remove("show"); });
     window.addEventListener("keydown",function(e){ if(e.repeat) return;
       var id=KEYMAP[(e.key||"").toLowerCase()]; if(id){e.preventDefault();hit(id,true);} });
     setStatus();
